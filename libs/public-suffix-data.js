@@ -18,7 +18,7 @@ function PublicSuffixData(opts) {
 }
 
 PublicSuffixData.prototype.getTLD = function (domain, cb) {
-  var segments = domain.split('.');
+  var segments = domain.toLowerCase().split('.');
   return this._getMemoryCachedTree()
     .then(function (rootNode) {
       var tldSegments = [];

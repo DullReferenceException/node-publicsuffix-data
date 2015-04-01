@@ -29,7 +29,7 @@ TLDParseStream.prototype._flush = function (cb) {
 };
 
 TLDParseStream.prototype._processLine = function (line) {
-  line = line.trim();
+  line = line.trim().toLowerCase();
   if (line && !isAComment.test(line)) {
     this.push(line.split('.'));
   }

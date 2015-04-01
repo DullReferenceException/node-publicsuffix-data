@@ -1,0 +1,24 @@
+{
+  "name": "publicsuffix-data",
+  "version": "0.0.1",
+  "repository": "https://github.secureserver.net/PC/node-publicsuffix-data",
+  "scripts": {
+    "test": "npm run test-and-ensure-coverage",
+    "integration": "mocha --recursive -R spec ./tests/integration",
+    "test-and-ensure-coverage": "npm run test-with-coverage && npm run verify-full-coverage",
+    "test-with-coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./tests/unit",
+    "verify-full-coverage": "istanbul check-coverage --statements 100 --functions 100 --branches 100 --lines 100"
+  },
+  "devDependencies": {
+    "chai": "^2.2.0",
+    "istanbul": "^0.3.13",
+    "mocha": "^2.2.1",
+    "proxyquire": "^1.4.0",
+    "sinon": "^1.14.1",
+    "sinon-chai": "^2.7.0"
+  },
+  "dependencies": {
+    "bluebird": "^2.9.21",
+    "request": "^2.54.0"
+  }
+}

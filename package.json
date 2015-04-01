@@ -20,5 +20,8 @@
   "dependencies": {
     "bluebird": "^2.9.21",
     "request": "^2.54.0"
+  },
+  "publishConfig": {
+    "registry": "http://172.19.112.179:4873"
   }
 }

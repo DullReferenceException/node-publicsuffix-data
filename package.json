@@ -1,7 +1,8 @@
 {
   "name": "publicsuffix-data",
-  "version": "0.0.1",
-  "repository": "https://github.secureserver.net/PC/node-publicsuffix-data",
+  "version": "1.0.0",
+  "repository": "https://github.com/DullReferenceException/node-publicsuffix-data",
+  "description": "Wrapper around the Public Suffix List https://publicsuffix.org/",
   "scripts": {
     "test": "npm run test-and-ensure-coverage",
     "integration": "mocha --recursive -R spec ./tests/integration",
@@ -20,8 +21,5 @@
   "dependencies": {
     "bluebird": "^2.9.21",
     "request": "^2.54.0"
-  },
-  "publishConfig": {
-    "registry": "http://172.19.112.179:4873"
   }
 }

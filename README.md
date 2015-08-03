@@ -2,7 +2,15 @@
 
 Module for accessing the publicsuffix.org database for TLDs
 
-# Description
+## Installing
+
+Install using npm:
+
+```bash
+npm install --save publicsuffix-data
+```
+
+## Description
 
 Maintains an infrequently-updated copy of the [Public Suffix List](https://publicsuffix.org/) and an API to query this
 data.
@@ -14,7 +22,7 @@ an automatically-updating database:
 - [public-suffix](https://www.npmjs.com/package/public-suffix)
 - [psl](https://www.npmjs.com/package/psl)
 
-# Usage
+## Usage
 
 ```javascript
 var PublicSuffixData = require('publicsuffix-data');

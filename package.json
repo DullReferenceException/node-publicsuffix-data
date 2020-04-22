@@ -1,11 +1,13 @@
 {
   "name": "publicsuffix-data",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "repository": "https://github.com/DullReferenceException/node-publicsuffix-data",
   "description": "Wrapper around the Public Suffix List https://publicsuffix.org/",
   "license": "MIT",
   "main": "lib/public-suffix-data",
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "engines": {
     "node": ">=10.0.0"
   },

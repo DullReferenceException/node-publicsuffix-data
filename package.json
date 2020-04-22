@@ -3,23 +3,27 @@
   "version": "1.0.0",
   "repository": "https://github.com/DullReferenceException/node-publicsuffix-data",
   "description": "Wrapper around the Public Suffix List https://publicsuffix.org/",
+  "license": "MIT",
+  "main": "lib/public-suffix-data",
+  "files": ["lib"],
+  "engines": {
+    "node": ">=10.0.0"
+  },
   "scripts": {
-    "test": "npm run test-and-ensure-coverage",
-    "integration": "mocha --recursive -R spec ./tests/integration",
-    "test-and-ensure-coverage": "npm run test-with-coverage && npm run verify-full-coverage",
-    "test-with-coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- --recursive -R spec ./tests/unit",
-    "verify-full-coverage": "istanbul check-coverage --statements 100 --functions 100 --branches 100 --lines 100"
+    "test": "nyc --check-coverage --statements 100 --functions 100 --branches 100 --lines 100 mocha --recursive -R spec ./test/unit",
+    "integration": "mocha --recursive -R spec ./test/integration",
+    "coverage-report": "nyc report --reporter=html",
+    "prepublishOnly": "npm run test && npm run integration"
   },
   "devDependencies": {
-    "chai": "^2.2.0",
-    "istanbul": "^0.3.13",
-    "mocha": "^2.2.1",
+    "chai": "^4.2.0",
+    "mocha": "^7.1.1",
+    "nyc": "^15.0.1",
     "proxyquire": "^1.4.0",
-    "sinon": "^1.14.1",
-    "sinon-chai": "^2.7.0"
+    "sinon": "^9.0.2",
+    "sinon-chai": "^3.5.0"
   },
   "dependencies": {
-    "bluebird": "^2.9.21",
     "request": "^2.54.0"
   }
 }

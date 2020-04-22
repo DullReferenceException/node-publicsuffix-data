@@ -25,14 +25,13 @@ an automatically-updating database:
 ## Usage
 
 ```javascript
-var PublicSuffixData = require('publicsuffix-data');
-var publicSuffixData = new PublicSuffixData({
+const PublicSuffixData = require('publicsuffix-data');
+const publicSuffixData = new PublicSuffixData({
   tts: timeToStaleInSeconds,    // Seconds until the next fetch of data will occur. Defaults to 10 days (864,000).
   ttl: timeToLiveInSeconds,     // Seconds until old data becomes invalid. Defaults to 30 days (2,592,000).
   cache: cacheFileLocation      // Defaults to ~/.publicsuffix.org
 });
 
-publicSuffixData.getTLD('foo.example.com', function (err, result) {
-  console.log(result); // "com"
-});
+const result = await publicSuffixData.getTLD('foo.example.com');
+console.log(result); // "com"
 ```

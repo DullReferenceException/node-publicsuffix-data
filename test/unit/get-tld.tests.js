@@ -1,8 +1,6 @@
-const proxyquire = require('proxyquire');
+const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 const chai = require('chai');
-const { EventEmitter } = require('events');
-const { PassThrough: PassThroughStream } = require('stream');
 
 chai.use(require('sinon-chai'));
 const expect = chai.expect;
@@ -13,7 +11,7 @@ describe('getTLD', function () {
   beforeEach(setup);
 
   let PublicSuffixData;
-  let fs, request;
+  let fs, fetch;
 
   it('defaults the cache file location to USERPROFILE if that variable exists', async function () {
     process.env.USERPROFILE = 'userProfilePath';
@@ -39,19 +37,18 @@ describe('getTLD', function () {
       });
   });
 
-  it('retrieves the list from the Internet if the cached file does not exist', function () {
+  it('retrieves the list from the Internet if the cached file does not exist', async function () {
     fs.promises.stat.withArgs(sinon.match(/\.publicsuffix\.org$/)).rejects({ code: 'ENOENT' });
-
     const data = new PublicSuffixData();
-    return data.getTLD('somedomain.com')
-      .then(function () {
-        expect(request).to.have.been.calledWith('https://publicsuffix.org/list/effective_tld_names.dat');
-      });
+    
+    await data.getTLD('somedomain.com')
+
+    expect(fetch).to.have.been.calledWith('https://publicsuffix.org/list/effective_tld_names.dat');
   });
 
   it('yields an error if there is no cached data and data retrieval fails', async function () {
     fs.promises.stat.withArgs(sinon.match(/\.publicsuffix\.org$/)).rejects({ code: 'ENOENT' });
-    request.returns(createMockErrorStream());
+    fetch.resolves({ ok: true, body: createMockErrorStream() });
 
     const data = new PublicSuffixData();
 
@@ -71,7 +68,7 @@ describe('getTLD', function () {
     const data = new PublicSuffixData();
     return data.getTLD('somedomain.com')
       .then(function () {
-        expect(request).to.have.been.calledWith('https://publicsuffix.org/list/effective_tld_names.dat');
+        expect(fetch).to.have.been.calledWith('https://publicsuffix.org/list/effective_tld_names.dat');
       });
   });
 
@@ -84,12 +81,12 @@ describe('getTLD', function () {
     await delay(10);
 
     fs.promises.stat.rejects({ code: 'ENOENT' });
-    request.returns(createMockErrorStream());
+    fetch.resolves({ ok: true, body: createMockErrorStream() });
     await data.getTLD('somedomain.com');
   });
 
   it('does not yield an error if there is stale but not expired cached data on disk and data retrieval fails', async function () {
-    request.returns(createMockErrorStream());
+    fetch.resolves({ ok: true, body: createMockErrorStream() });
     fs.promises.stat.withArgs(sinon.match(/\.publicsuffix\.org$/)).resolves({ mtime: new Date(Date.now() - 150000) });
 
     const data = new PublicSuffixData({ tts: 100, ttl: 200 });
@@ -99,7 +96,23 @@ describe('getTLD', function () {
 
   it('yields an error if there is expired cached data and data retrieval fails', async function () {
     fs.promises.stat.withArgs(sinon.match(/\.publicsuffix\.org$/)).resolves({ mtime: new Date(Date.now() - 300000) });
-    request.returns(createMockErrorStream());
+    fetch.resolves({ ok: true, body: createMockErrorStream() });
+
+    const data = new PublicSuffixData({ tts: 100, ttl: 200 });
+
+    let caughtError = null;
+    try {
+      await data.getTLD('somedomain.com');
+    } catch (err) {
+      caughtError = err;
+    }
+    
+    expect(caughtError).to.exist;
+  });
+
+  it('yields an error if data retrieval has an HTTP error', async function () {
+    fs.promises.stat.withArgs(sinon.match(/\.publicsuffix\.org$/)).resolves({ mtime: new Date(Date.now() - 300000) });
+    fetch.resolves({ ok: false, status: 500, body: createMockStream('500 Internal Error') });
 
     const data = new PublicSuffixData({ tts: 100, ttl: 200 });
 
@@ -119,7 +132,7 @@ describe('getTLD', function () {
     const data = new PublicSuffixData();
     return data.getTLD('somedomain.com')
       .then(function () {
-        expect(request).to.have.not.been.called;
+        expect(fetch).to.have.not.been.called;
       });
   });
 
@@ -130,7 +143,7 @@ describe('getTLD', function () {
     const data = new PublicSuffixData();
     return data.getTLD('somedomain.com')
       .then(function () {
-        expect(request).to.have.been.called;
+        expect(fetch).to.have.been.called;
       });
   });
 
@@ -161,7 +174,7 @@ describe('getTLD', function () {
     this.timeout(5000);
 
     fs.promises.stat.rejects({ code: 'ENOENT' });
-    request.returns(createMockStream('uk'));
+    fetch.resolves({ ok: true, body: createMockStream('uk') });
 
     const data = new PublicSuffixData({ tts: 1, ttl: 1000000 });
     let tld = await data.getTLD('somedomain.co.uk');
@@ -169,7 +182,7 @@ describe('getTLD', function () {
 
     await delay(2000);
 
-    request.returns(createMockStream('uk\nco.uk'));
+    fetch.resolves({ ok: true, body: createMockStream('uk\nco.uk') });
     tld = await data.getTLD('somedomain.co.uk');
     expect(tld).to.equal('uk'); // We still serve up stale data
 
@@ -182,7 +195,7 @@ describe('getTLD', function () {
   it('handles single-segment TLDs', function () {
     const cacheFile = sinon.match(/\.publicsuffix\.org$/);
     fs.promises.stat.withArgs(cacheFile).rejects({ code: 'ENOENT' });
-    request.returns(createMockStream('com'));
+    fetch.resolves({ ok: true, body: createMockStream('com') });
 
     const data = new PublicSuffixData();
     return data.getTLD('somedomain.com')
@@ -191,22 +204,21 @@ describe('getTLD', function () {
       });
   });
 
-  it('handles two-segment TLDs', function () {
+  it('handles two-segment TLDs', async function () {
     const cacheFile = sinon.match(/\.publicsuffix\.org$/);
     fs.promises.stat.withArgs(cacheFile).rejects({ code: 'ENOENT' });
-    request.returns(createMockStream('co\nuk\nco.uk'));
-
+    fetch.resolves({ ok: true, body: createMockStream('co\nuk\nco.uk') });
     const data = new PublicSuffixData();
-    return data.getTLD('foo.co.uk')
-      .then(function (tld) {
-        expect(tld).to.equal('co.uk');
-      });
+    
+    const tld = await data.getTLD('foo.co.uk')
+    
+    expect(tld).to.equal('co.uk');
   });
 
   it('handles exception rules', function () {
     const cacheFile = sinon.match(/\.publicsuffix\.org$/);
     fs.promises.stat.withArgs(cacheFile).rejects({ code: 'ENOENT' });
-    request.returns(createMockStream('*.kawasaki.jp\n!city.kawasaki.jp'));
+    fetch.resolves({ ok: true, body: createMockStream('*.kawasaki.jp\n!city.kawasaki.jp') });
 
     const data = new PublicSuffixData();
     return data.getTLD('city.kawasaki.jp')
@@ -218,7 +230,10 @@ describe('getTLD', function () {
   it('ignores comments', function () {
     const cacheFile = sinon.match(/\.publicsuffix\.org$/);
     fs.promises.stat.withArgs(cacheFile).rejects({ code: 'ENOENT' });
-    request.returns(createMockStream('jp\n// jp geographic type names\n*.kawasaki.jp'));
+    fetch.resolves({
+      ok: true,
+      body: createMockStream('jp\n// jp geographic type names\n*.kawasaki.jp')
+    });
 
     const data = new PublicSuffixData();
     return data.getTLD('foo.kawasaki.jp')
@@ -236,25 +251,20 @@ describe('getTLD', function () {
       }
     };
 
-    request = sinon.stub().returns(createMockStream(''));
+    fetch = sinon.stub().resolves({ ok: true, body: createMockStream('') });
 
-    PublicSuffixData = proxyquire.noCallThru()('../../lib/public-suffix-data', {
-      fs: fs,
-      request: request
+    PublicSuffixData = proxyquire('../../lib/public-suffix-data', {
+      fs,
+      'node-fetch': fetch
     });
   }
 
-  function createMockStream(content) {
-    const stream = new PassThroughStream();
-    stream.end(content);
-    return stream;
+  async function* createMockStream(content) {
+    yield content;
   }
 
-  function createMockErrorStream() {
-    const mockStream = new EventEmitter();
-    mockStream.on = sinon.stub().withArgs('error').yields(new Error('Boom'));
-    mockStream.pipe = function (writable) { return writable; };
-    return mockStream;
+  async function* createMockErrorStream() {
+    throw new Error('Boom');
   }
 
   function delay(ms) {

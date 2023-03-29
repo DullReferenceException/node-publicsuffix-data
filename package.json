@@ -26,6 +26,6 @@
     "sinon-chai": "^3.5.0"
   },
   "dependencies": {
-    "request": "^2.54.0"
+    "node-fetch": "^2.6.9"
   }
 }

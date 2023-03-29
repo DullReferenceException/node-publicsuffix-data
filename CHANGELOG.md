@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.0.1
+
+- Replace vulnerable dependencies
+
 # 2.0.0
 
 Breaking:
